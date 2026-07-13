@@ -95,20 +95,4 @@ if (is_admin()) {
     FWUSystemLog::init(WPFM_KEY);
 }
 
-if (
-    !is_plugin_active('duplicate-post/duplicate-post.php')
-) {
-    function WPFM_Error_Install_o_Active()
-    {
-?>
-        <div class="notice notice-error is-dismissible">
-            <p>
-                Generate Page AI requiere el plugin "Yoast Duplicate Post" para funcionar correctamente.
-            </p>
-        </div>
-<?php
-    }
-    add_action('admin_notices', 'WPFM_Error_Install_o_Active');
-} else {
-    require_once WPFM_DIR . 'src/_.php';
-}
+require_once WPFM_DIR . 'src/_.php';
