@@ -16,8 +16,8 @@ add_action('admin_menu', function () {
 
     add_submenu_page(
         WPFM_KEY,
-        'Configuraci\u00f3n',
-        'Configuraci\u00f3n',
+        'Configuración',
+        'Configuración',
         'manage_options',
         WPFM_KEY . '_config',
         'WPFM_PAGE_CONFIG_VIEW'

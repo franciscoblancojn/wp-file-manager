@@ -14,7 +14,7 @@ $TAGS = [
     ],
     [
         'key' => 'config',
-        'title' => 'Configuraci\u00f3n',
+        'title' => 'Configuración',
     ],
 ];
 $defaultTag = $TAGS[0]['key'];
