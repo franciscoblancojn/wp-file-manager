@@ -3,7 +3,7 @@
 Plugin Name: WP File Manager
 Plugin URI: https://github.com/franciscoblancojn/wp-file-manager
 Description: Plugin de Wordpress para subir, eliminar o remplazar archivos.
-Version: 0.0.0
+Version: 1.0.0
 Author: franciscoblancojn
 Author URI: https://franciscoblanco.vercel.app/
 License: GPL2+

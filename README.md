@@ -1,6 +1,6 @@
 # WP File Manager
 
-**Version:** 0.0.0 | **License:** GPLv2+
+**Version:** 1.0.0 | **License:** GPLv2+
 
 Plugin de WordPress para **subir, eliminar y reemplazar archivos** dentro de la carpeta `uploads/WPFM/`. Los archivos se gestionan desde una página en el administrador de WordPress y a través de una API REST con validación de API Key.
 
