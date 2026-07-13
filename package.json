@@ -1,6 +1,6 @@
 {
   "name": "wp-file-manager",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Plugin de Wordpress para subir, eliminar o remplazar archivos.",
   "main": "index.js",
   "scripts": {

@@ -4,6 +4,10 @@
 
 ---
 
+## [1.1.0] — 2025-07-12
+
+- **Nuevo**: client.html para el uso del sistema de forma remota.
+
 ## [1.0.0] — 2025-07-12
 
 - **Nuevo**: Panel de administración con tabs (Archivos, Configuración)
