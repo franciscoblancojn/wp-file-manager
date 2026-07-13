@@ -237,7 +237,7 @@
                 opts.headers['Content-Type'] = 'application/json';
                 opts.body = JSON.stringify(body);
             }
-            return fetch(API_URL+'/wp-json/WPFM'+path, opts).then(function(r){
+            return fetch(API_URL+'/wp-json/WPFM'+path+"/", opts).then(function(r){
                 if(raw) return r;
                 return r.json();
             });
@@ -364,7 +364,7 @@
             var formData = new FormData();
             formData.append('file', file);
             if(name) formData.append('name', name);
-            fetch(API_URL+'/wp-json/WPFM/upload',{
+            fetch(API_URL+'/wp-json/WPFM/upload/',{
                 method: 'POST',
                 headers: {'X-WPFM-Key': API_KEY},
                 body: formData
