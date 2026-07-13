@@ -121,6 +121,11 @@ $rest_url = rest_url(WPFM_KEY) . '/';
                             <td><code style="white-space: nowrap;">/wp-json/WPFM/upload</code></td>
                             <td>Sube o reemplaza archivo</td>
                         </tr>
+                        <tr>
+                            <td><code style="white-space: nowrap;">POST</code></td>
+                            <td><code style="white-space: nowrap;">/wp-json/WPFM/upload/base64</code></td>
+                            <td>Sube o reemplaza archivo vía base64</td>
+                        </tr>
                     </tbody>
                 </table>
             </td>

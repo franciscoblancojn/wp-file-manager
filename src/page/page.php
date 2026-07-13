@@ -17,6 +17,12 @@ $TAGS = [
         'title' => 'Configuración',
     ],
 ];
+if (!empty($CONFIG['api_enabled'])) {
+    $TAGS[] = [
+        'key' => 'api',
+        'title' => 'API',
+    ];
+}
 $defaultTag = $TAGS[0]['key'];
 
 echo FWUPage::css();

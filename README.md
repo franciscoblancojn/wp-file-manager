@@ -85,6 +85,7 @@ El plugin expone endpoints REST para gestionar archivos desde sistemas externos.
 | `GET` | `/wp-json/WPFM/get` | `?name=x` | Info del archivo. `?name=x&download=1` para descargar |
 | `DELETE` | `/wp-json/WPFM/delete` | `?name=x` | Elimina un archivo |
 | `POST` | `/wp-json/WPFM/upload` | multipart `file` + `name` (opcional) | Sube o reemplaza un archivo |
+| `POST` | `/wp-json/WPFM/upload/base64` | JSON: `name`, `file` (base64), `mimetype` (opcional) | Sube o reemplaza un archivo vía base64 |
 
 ### Autenticacion
 
@@ -105,6 +106,11 @@ curl -X POST -H "X-WPFM-Key: wpfm_xxxxx" -F "file=@archivo.pdf" https://tusitio.
 
 # Subir/reemplazar con nombre personalizado
 curl -X POST -H "X-WPFM-Key: wpfm_xxxxx" -F "file=@archivo.pdf" -F "name=mi-archivo.pdf" https://tusitio.com/wp-json/WPFM/upload
+
+# Subir archivo vía base64
+curl -X POST -H "X-WPFM-Key: wpfm_xxxxx" -H "Content-Type: application/json" \
+  -d '{"name":"archivo.pdf","file":"BASE64_AQUI","mimetype":"application/pdf"}' \
+  https://tusitio.com/wp-json/WPFM/upload/base64
 ```
 
 ### Configuracion

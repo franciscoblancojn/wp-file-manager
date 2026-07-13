@@ -53,6 +53,7 @@ wp-file-manager/
 | `GET` | `/WPFM/get` | `?name=x` | Info/descarga de archivo |
 | `DELETE` | `/WPFM/delete` | `?name=x` | Elimina archivo |
 | `POST` | `/WPFM/upload` | multipart `file` + `name` | Sube/reemplaza archivo |
+| `POST` | `/WPFM/upload/base64` | JSON: `name`, `file` (base64), `mimetype` (opcional) | Sube/reemplaza archivo vía base64 |
 
 ### Autenticacion
 

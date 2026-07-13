@@ -58,6 +58,12 @@ class WPFM_API
             'callback' => [self::class, 'handleUpload'],
             'permission_callback' => [self::class, 'checkPermission'],
         ]);
+
+        register_rest_route(WPFM_KEY, '/upload/base64', [
+            'methods' => 'POST',
+            'callback' => [self::class, 'handleUploadBase64'],
+            'permission_callback' => [self::class, 'checkPermission'],
+        ]);
     }
 
     public static function checkPermission($request)
@@ -314,6 +320,95 @@ class WPFM_API
                 'modified' => date('Y-m-d H:i:s', filemtime($file_path)),
                 'url' => wp_upload_dir()['baseurl'] . '/WPFM/' . $name,
                 'mime' => wp_check_filetype($name)['type'] ?? 'application/octet-stream',
+                'replaced' => $is_replace,
+            ],
+        ], 200);
+    }
+
+    public static function handleUploadBase64($request)
+    {
+        $params = $request->get_json_params();
+
+        if (empty($params['name'])) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nombre de archivo requerido.',
+            ], 400);
+        }
+
+        if (empty($params['file'])) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Contenido del archivo (base64) requerido.',
+            ], 400);
+        }
+
+        $name = self::sanitizeFileName($params['name']);
+        if (empty($name)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Nombre de archivo no válido.',
+            ], 400);
+        }
+
+        $base64 = $params['file'];
+
+        $base64 = preg_replace('/^data:[^;]+;base64,/', '', $base64);
+
+        if (!preg_match('/^[A-Za-z0-9+\/=\s]+$/', $base64)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'El contenido no es un base64 válido.',
+            ], 400);
+        }
+
+        $decoded = base64_decode($base64, true);
+        if ($decoded === false) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Error al decodificar el base64.',
+            ], 400);
+        }
+
+        $dir = self::getUploadDir();
+        $file_path = $dir . '/' . $name;
+
+        if (!self::isPathSafe($file_path, $dir)) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Ruta no válida.',
+            ], 400);
+        }
+
+        $is_replace = file_exists($file_path);
+
+        if (file_put_contents($file_path, $decoded) === false) {
+            return new WP_REST_Response([
+                'success' => false,
+                'message' => 'Error al guardar el archivo.',
+            ], 500);
+        }
+
+        $mime = !empty($params['mimetype'])
+            ? sanitize_text_field($params['mimetype'])
+            : (wp_check_filetype($name)['type'] ?? 'application/octet-stream');
+
+        FWUSystemLog::add(WPFM_KEY, [
+            'type' => $is_replace ? 'API_FILE_REPLACE_BASE64' : 'API_FILE_UPLOAD_BASE64',
+            'file' => $name,
+            'size' => filesize($file_path),
+        ]);
+
+        return new WP_REST_Response([
+            'success' => true,
+            'message' => $is_replace ? 'Archivo reemplazado correctamente.' : 'Archivo subido correctamente.',
+            'data' => [
+                'name' => $name,
+                'size' => filesize($file_path),
+                'size_human' => size_format(filesize($file_path)),
+                'modified' => date('Y-m-d H:i:s', filemtime($file_path)),
+                'url' => wp_upload_dir()['baseurl'] . '/WPFM/' . $name,
+                'mime' => $mime,
                 'replaced' => $is_replace,
             ],
         ], 200);
