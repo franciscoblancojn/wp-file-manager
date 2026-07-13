@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WP File Manager — Cliente</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen-Sans,Ubuntu,Cantarell,sans-serif;background:#f0f0f1;color:#1d2327;line-height:1.6}
+        .container{max-width:900px;margin:2rem auto;padding:0 1rem}
+        .card{background:#fff;border:1px solid #dcdcde;border-radius:8px;padding:24px;margin-bottom:1rem}
+        h1{font-size:1.5rem;margin-bottom:.5rem}
+        h2{font-size:1.2rem;margin-bottom:1rem;color:#50575e}
+        .form-group{margin-bottom:1rem}
+        .form-group label{display:block;font-weight:600;margin-bottom:4px;font-size:13px}
+        .form-group input{width:100%;padding:8px 12px;border:1px solid #dcdcde;border-radius:4px;font-size:14px}
+        .form-group input:focus{outline:none;border-color:#2271b1;box-shadow:0 0 0 1px #2271b1}
+        .form-row{display:flex;gap:8px;align-items:flex-end}
+        .form-row .form-group{flex:1}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border:1px solid #dcdcde;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#1d2327;text-decoration:none;line-height:1.4}
+        .btn:hover{background:#f6f7f7}
+        .btn-primary{background:#2271b1;border-color:#2271b1;color:#fff}
+        .btn-primary:hover{background:#135e96}
+        .btn-danger{background:#d63638;border-color:#d63638;color:#fff}
+        .btn-danger:hover{background:#b32d2e}
+        .btn-sm{padding:4px 10px;font-size:12px}
+        .btn-icon{padding:4px 8px}
+        .header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:1rem}
+        .header h1{margin:0}
+        .header-actions{display:flex;gap:8px;align-items:center}
+        .file-table{width:100%;border-collapse:collapse}
+        .file-table th{text-align:left;padding:10px 12px;border-bottom:2px solid #dcdcde;font-size:12px;text-transform:uppercase;color:#50575e}
+        .file-table td{padding:10px 12px;border-bottom:1px solid #f0f0f1;font-size:14px}
+        .file-table tr:hover td{background:#f6f7f7}
+        .file-name{font-weight:600;color:#2271b1;text-decoration:none;word-break:break-all}
+        .file-name:hover{text-decoration:underline}
+        .file-size{color:#787c82;font-size:13px}
+        .file-date{color:#787c82;font-size:13px}
+        .file-actions{display:flex;gap:4px;flex-wrap:wrap}
+        .empty{text-align:center;padding:3rem;color:#787c82}
+        .empty-icon{font-size:3rem;margin-bottom:.5rem}
+        .msg{padding:12px 16px;border-radius:4px;margin-bottom:1rem;font-weight:600;font-size:14px}
+        .msg-ok{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
+        .msg-error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+        .modal-overlay.open{display:flex}
+        .modal{background:#fff;border-radius:8px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto}
+        .modal h3{margin-bottom:1rem}
+        .modal-actions{display:flex;gap:8px;margin-top:1rem}
+        .drop-zone{border:2px dashed #dcdcde;border-radius:8px;padding:2rem;text-align:center;color:#787c82;cursor:pointer;transition:all .2s}
+        .drop-zone:hover,.drop-zone.dragover{border-color:#2271b1;color:#2271b1;background:#f0f6ff}
+        .drop-zone input{display:none}
+        .loading{opacity:.5;pointer-events:none}
+        .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="login-view" class="card" style="display:none">
+            <h1>WP File Manager</h1>
+            <h2>Conectar con WordPress</h2>
+            <div id="login-msg"></div>
+            <div class="form-group">
+                <label for="inp-url">URL de WordPress</label>
+                <input type="url" id="inp-url" placeholder="https://tusitio.com">
+            </div>
+            <div class="form-group">
+                <label for="inp-key">API Key</label>
+                <input type="text" id="inp-key" placeholder="wpfm_xxxxx">
+            </div>
+            <div class="form-row">
+                <button class="btn btn-primary" onclick="doLogin()">Conectar</button>
+            </div>
+        </div>
+
+        <div id="files-view" class="card" style="display:none">
+            <div class="header">
+                <h1>WP File Manager</h1>
+                <div class="header-actions">
+                    <button class="btn" onclick="showUploadModal()">+ Subir Archivo</button>
+                    <button class="btn btn-sm" onclick="showSettings()">Config</button>
+                    <button class="btn btn-sm" onclick="doLogout()">Salir</button>
+                </div>
+            </div>
+            <div id="files-msg"></div>
+            <div id="files-content"></div>
+        </div>
+    </div>
+
+    <div id="modal-upload" class="modal-overlay">
+        <div class="modal">
+            <h3>Subir Archivo</h3>
+            <div id="upload-drop" class="drop-zone">
+                <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
+                <input type="file" id="upload-input">
+            </div>
+            <div id="upload-info" style="display:none;margin-top:12px">
+                <p><strong>Archivo:</strong> <span id="upload-name"></span></p>
+                <p><strong>Tamaño:</strong> <span id="upload-size"></span></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="upload-btn" onclick="doUpload()" disabled>Subir</button>
+                <button class="btn" onclick="closeModal('modal-upload')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-replace" class="modal-overlay">
+        <div class="modal">
+            <h3>Reemplazar Archivo</h3>
+            <p style="margin-bottom:12px">Reemplazar <strong id="replace-name"></strong></p>
+            <div id="replace-drop" class="drop-zone">
+                <p>Arrastra un archivo aquí o haz clic para seleccionar</p>
+                <input type="file" id="replace-input">
+            </div>
+            <div id="replace-info" style="display:none;margin-top:12px">
+                <p><strong>Archivo:</strong> <span id="replace-file-name"></span></p>
+                <p><strong>Tamaño:</strong> <span id="replace-file-size"></span></p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" id="replace-btn" onclick="doReplace()" disabled>Reemplazar</button>
+                <button class="btn" onclick="closeModal('modal-replace')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal">
+            <h3>Configuración</h3>
+            <div class="form-group">
+                <label for="set-url">URL de WordPress</label>
+                <input type="url" id="set-url">
+            </div>
+            <div class="form-group">
+                <label for="set-key">API Key</label>
+                <input type="text" id="set-key">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="saveSettings()">Guardar</button>
+                <button class="btn" onclick="closeModal('modal-settings')">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        var API_KEY = localStorage.getItem('wpfm_api_key') || '';
+        var API_URL = localStorage.getItem('wpfm_url') || '';
+        var uploadFile = null;
+        var replaceFile = null;
+        var replaceName = '';
+
+        function init(){
+            if(API_KEY && API_URL){
+                showView('files');
+                loadFiles();
+            }else{
+                showView('login');
+                document.getElementById('inp-url').value = API_URL;
+                document.getElementById('inp-key').value = API_KEY;
+            }
+        }
+
+        function showView(v){
+            document.getElementById('login-view').style.display = v==='login' ? '' : 'none';
+            document.getElementById('files-view').style.display = v==='files' ? '' : 'none';
+        }
+
+        function showMsg(id, text, ok){
+            var el = document.getElementById(id);
+            el.innerHTML = '<div class="msg '+(ok?'msg-ok':'msg-error')+'">'+esc(text)+'</div>';
+            setTimeout(function(){el.innerHTML=''},4000);
+        }
+
+        function esc(s){
+            var d=document.createElement('div');
+            d.appendChild(document.createTextNode(s));
+            return d.innerHTML;
+        }
+
+        function formatSize(b){
+            if(b<1024) return b+' B';
+            if(b<1048576) return (b/1024).toFixed(1)+' KB';
+            return (b/1048576).toFixed(1)+' MB';
+        }
+
+        window.doLogin = function(){
+            var url = document.getElementById('inp-url').value.replace(/\/+$/,'');
+            var key = document.getElementById('inp-key').value.trim();
+            if(!url || !key){
+                showMsg('login-msg','Completa ambos campos.',false);
+                return;
+            }
+            API_URL = url;
+            API_KEY = key;
+            localStorage.setItem('wpfm_url', API_URL);
+            localStorage.setItem('wpfm_api_key', API_KEY);
+            showView('files');
+            loadFiles();
+        };
+
+        window.doLogout = function(){
+            localStorage.removeItem('wpfm_api_key');
+            localStorage.removeItem('wpfm_url');
+            API_KEY = '';
+            API_URL = '';
+            showView('login');
+        };
+
+        window.showSettings = function(){
+            document.getElementById('set-url').value = API_URL;
+            document.getElementById('set-key').value = API_KEY;
+            document.getElementById('modal-settings').classList.add('open');
+        };
+
+        window.saveSettings = function(){
+            var url = document.getElementById('set-url').value.replace(/\/+$/,'');
+            var key = document.getElementById('set-key').value.trim();
+            if(!url || !key){
+                alert('Completa ambos campos.');
+                return;
+            }
+            API_URL = url;
+            API_KEY = key;
+            localStorage.setItem('wpfm_url', API_URL);
+            localStorage.setItem('wpfm_api_key', API_KEY);
+            closeModal('modal-settings');
+            loadFiles();
+        };
+
+        function api(method, path, body, raw){
+            var opts = {
+                method: method,
+                headers: {'X-WPFM-Key': API_KEY}
+            };
+            if(body){
+                opts.headers['Content-Type'] = 'application/json';
+                opts.body = JSON.stringify(body);
+            }
+            return fetch(API_URL+'/wp-json/WPFM'+path, opts).then(function(r){
+                if(raw) return r;
+                return r.json();
+            });
+        }
+
+        function loadFiles(){
+            var ct = document.getElementById('files-content');
+            ct.innerHTML = '<p>Cargando...</p>';
+            api('GET','/list').then(function(d){
+                if(!d.success){
+                    showMsg('files-msg', d.message || 'Error al cargar archivos.', false);
+                    if(d.data && d.data.status===403){
+                        showView('login');
+                    }
+                    ct.innerHTML = '';
+                    return;
+                }
+                renderFiles(d.data);
+            }).catch(function(e){
+                showMsg('files-msg','Error de conexión: '+e.message,false);
+                ct.innerHTML='';
+            });
+        }
+
+        function renderFiles(files){
+            var ct = document.getElementById('files-content');
+            if(!files || files.length===0){
+                ct.innerHTML = '<div class="empty"><div class="empty-icon">&#128193;</div><p>No hay archivos en la carpeta WPFM.</p></div>';
+                return;
+            }
+            var html = '<table class="file-table"><thead><tr>'
+                +'<th>Nombre</th><th>Tamaño</th><th>Modificado</th><th>Acciones</th>'
+                +'</tr></thead><tbody>';
+            for(var i=0;i<files.length;i++){
+                var f = files[i];
+                html += '<tr>'
+                    +'<td><a class="file-name" href="'+esc(f.url)+'" target="_blank" rel="noopener">'+esc(f.name)+'</a></td>'
+                    +'<td class="file-size">'+esc(f.size_human)+'</td>'
+                    +'<td class="file-date">'+esc(f.modified)+'</td>'
+                    +'<td class="file-actions">'
+                    +'<a href="'+esc(f.url)+'" target="_blank" class="btn btn-sm" rel="noopener">Abrir</a>'
+                    +'<button class="btn btn-sm" onclick="startReplace(\''+esc(f.name)+'\')">Reemplazar</button>'
+                    +'<button class="btn btn-sm btn-danger" onclick="doDelete(\''+esc(f.name)+'\')">Eliminar</button>'
+                    +'</td></tr>';
+            }
+            html += '</tbody></table>';
+            ct.innerHTML = html;
+        }
+
+        window.doDelete = function(name){
+            if(!confirm('¿Eliminar "'+name+'"?')) return;
+            api('DELETE','/delete?name='+encodeURIComponent(name)).then(function(d){
+                if(d.success){
+                    showMsg('files-msg',d.message,true);
+                    loadFiles();
+                }else{
+                    showMsg('files-msg',d.message||'Error al eliminar.',false);
+                }
+            }).catch(function(e){
+                showMsg('files-msg','Error: '+e.message,false);
+            });
+        };
+
+        window.showUploadModal = function(){
+            uploadFile = null;
+            document.getElementById('upload-input').value = '';
+            document.getElementById('upload-info').style.display = 'none';
+            document.getElementById('upload-btn').disabled = true;
+            document.getElementById('modal-upload').classList.add('open');
+        };
+
+        window.startReplace = function(name){
+            replaceName = name;
+            replaceFile = null;
+            document.getElementById('replace-name').textContent = name;
+            document.getElementById('replace-input').value = '';
+            document.getElementById('replace-info').style.display = 'none';
+            document.getElementById('replace-btn').disabled = true;
+            document.getElementById('modal-replace').classList.add('open');
+        };
+
+        window.closeModal = function(id){
+            document.getElementById(id).classList.remove('open');
+        };
+
+        function setupDrop(dropId, inputId, infoId, nameId, sizeId, onFile){
+            var drop = document.getElementById(dropId);
+            var input = document.getElementById(inputId);
+            drop.addEventListener('click', function(){input.click()});
+            drop.addEventListener('dragover', function(e){e.preventDefault();drop.classList.add('dragover')});
+            drop.addEventListener('dragleave', function(){drop.classList.remove('dragover')});
+            drop.addEventListener('drop', function(e){
+                e.preventDefault();
+                drop.classList.remove('dragover');
+                if(e.dataTransfer.files.length){
+                    input.files = e.dataTransfer.files;
+                    input.dispatchEvent(new Event('change'));
+                }
+            });
+            input.addEventListener('change', function(){
+                var f = this.files[0];
+                if(!f) return;
+                onFile(f);
+                document.getElementById(nameId).textContent = f.name;
+                document.getElementById(sizeId).textContent = formatSize(f.size);
+                document.getElementById(infoId).style.display = '';
+            });
+        }
+
+        setupDrop('upload-drop','upload-input','upload-info','upload-name','upload-size',function(f){
+            uploadFile = f;
+            document.getElementById('upload-btn').disabled = false;
+        });
+
+        setupDrop('replace-drop','replace-input','replace-info','replace-file-name','replace-file-size',function(f){
+            replaceFile = f;
+            document.getElementById('replace-btn').disabled = false;
+        });
+
+        function uploadFileToServer(file, name, btnId, modalId, msgId){
+            var btn = document.getElementById(btnId);
+            btn.disabled = true;
+            btn.textContent = 'Subiendo...';
+            var formData = new FormData();
+            formData.append('file', file);
+            if(name) formData.append('name', name);
+            fetch(API_URL+'/wp-json/WPFM/upload',{
+                method: 'POST',
+                headers: {'X-WPFM-Key': API_KEY},
+                body: formData
+            }).then(function(r){return r.json()}).then(function(d){
+                btn.disabled = false;
+                btn.textContent = btnId==='upload-btn' ? 'Subir' : 'Reemplazar';
+                closeModal(modalId);
+                if(d.success){
+                    showMsg('files-msg',d.message,true);
+                    loadFiles();
+                }else{
+                    showMsg('files-msg',d.message||'Error al subir.',false);
+                }
+            }).catch(function(e){
+                btn.disabled = false;
+                btn.textContent = btnId==='upload-btn' ? 'Subir' : 'Reemplazar';
+                showMsg('files-msg','Error: '+e.message,false);
+            });
+        }
+
+        window.doUpload = function(){
+            if(!uploadFile) return;
+            uploadFileToServer(uploadFile, '', 'upload-btn', 'modal-upload', 'files-msg');
+        };
+
+        window.doReplace = function(){
+            if(!replaceFile) return;
+            uploadFileToServer(replaceFile, replaceName, 'replace-btn', 'modal-replace', 'files-msg');
+        };
+
+        document.addEventListener('click', function(e){
+            if(e.target.classList.contains('modal-overlay')){
+                e.target.classList.remove('open');
+            }
+        });
+
+        init();
+    })();
+    </script>
+</body>
+</html>

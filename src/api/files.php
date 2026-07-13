@@ -9,6 +9,23 @@ class WPFM_API
     public static function init()
     {
         add_action('rest_api_init', [self::class, 'registerRoutes']);
+        add_filter('rest_pre_serve_request', [self::class, 'corsHeaders']);
+    }
+
+    public static function corsHeaders($value)
+    {
+        $origin = isset($_SERVER['HTTP_ORIGIN']) ? $_SERVER['HTTP_ORIGIN'] : '';
+        if ($origin === 'null' || filter_var($origin, FILTER_VALIDATE_URL)) {
+            header('Access-Control-Allow-Origin: ' . $origin);
+            header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Content-Type, X-WPFM-Key');
+            header('Access-Control-Allow-Credentials: true');
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+            status_header(200);
+            exit;
+        }
+        return $value;
     }
 
     public static function getUploadDir()
@@ -98,11 +115,14 @@ class WPFM_API
     public static function isPathSafe($file_path, $base_dir)
     {
         $real_base = realpath($base_dir);
-        $real_file = realpath($file_path);
-        if ($real_base === false || $real_file === false) {
+        if ($real_base === false) {
             return false;
         }
-        return strpos($real_file, $real_base) === 0;
+        $real_dir = realpath(dirname($file_path));
+        if ($real_dir === false) {
+            return false;
+        }
+        return strpos($real_dir, $real_base) === 0;
     }
 
     public static function handleList($request)
